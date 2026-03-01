@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "BrowserAssist",
+  "version": "1.0.0",
+  "description": "Near-instant text completion and generation AI agent.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/index.tsx"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "BrowserAssist Options"
+  }
+}
