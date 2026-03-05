@@ -5,7 +5,6 @@ import { llmFactory } from '../services/llm';
 import { getPageContext } from '../services/pageScraper';
 import cssText from './style.css?inline';
 
-// We manage a global state for the React Component
 let reactRoot: Root | null = null;
 let currentActiveElement: HTMLElement | null = null;
 
@@ -51,6 +50,12 @@ const unmountReactApp = () => {
   if (reactRoot) {
     reactRoot.render(<></>); // Unmount safely
   }
+  
+  // Actually remove the host element so we know it's closed
+  const host = document.getElementById('browser-assist-host');
+  if (host) host.remove();
+  
+  reactRoot = null;
 };
 
 const insertText = (text: string) => {
@@ -58,10 +63,36 @@ const insertText = (text: string) => {
     if (currentActiveElement instanceof HTMLTextAreaElement || currentActiveElement instanceof HTMLInputElement) {
       // Replace @browserassist or /browserassist if it exists
       const val = currentActiveElement.value;
-      currentActiveElement.value = val.replace(/[@/]browserassist/i, '') + text;
+      const strippedVal = val.replace(/[@/]browserassist/i, '');
+      
+      // Update value and preserve cursor position
+      currentActiveElement.value = strippedVal + text;
       currentActiveElement.dispatchEvent(new Event('input', { bubbles: true }));
     } else if (currentActiveElement.isContentEditable) {
-      currentActiveElement.innerHTML = currentActiveElement.innerHTML.replace(/[@/]browserassist/i, '') + text;
+      // Securely insert text into contentEditable element to prevent XSS
+      const htmlText = currentActiveElement.innerHTML;
+      const strippedHtml = htmlText.replace(/[@/]browserassist/i, '');
+      currentActiveElement.innerHTML = strippedHtml;
+      
+      // Focus the element and firmly insert plain text securely
+      currentActiveElement.focus();
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        const textNode = document.createTextNode(text);
+        range.insertNode(textNode);
+        
+        // Move caret to end
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } else {
+        // Fallback
+        currentActiveElement.appendChild(document.createTextNode(text));
+      }
+      
       currentActiveElement.dispatchEvent(new Event('input', { bubbles: true }));
     }
   }
@@ -140,9 +171,43 @@ const handleAutocomplete = async (element: HTMLTextAreaElement | HTMLInputElemen
     element.addEventListener('input', removeTab);
     element.addEventListener('blur', removeTab);
     
-  } catch (err) {
+  } catch (err: any) {
     console.error("Autocomplete backend failed", err);
+    showErrorChip(err.message || String(err));
   }
+};
+
+const showErrorChip = (message: string) => {
+  const indicatorHost = document.createElement('div');
+  indicatorHost.style.position = 'fixed';
+  indicatorHost.style.bottom = '24px';
+  indicatorHost.style.left = '50%';
+  indicatorHost.style.transform = 'translateX(-50%)';
+  indicatorHost.style.zIndex = '999999';
+  indicatorHost.style.pointerEvents = 'none';
+
+  const indicatorShadow = indicatorHost.attachShadow({ mode: 'open' });
+  const indicatorStyle = document.createElement('style');
+  indicatorStyle.textContent = cssText;
+  indicatorShadow.appendChild(indicatorStyle);
+
+  const chip = document.createElement('div');
+  chip.className = 'bg-red-50 border border-red-200 text-red-700 px-5 py-3 rounded-2xl shadow-xl text-sm font-medium flex items-center gap-3 transition-opacity duration-300 opacity-0';
+  chip.innerHTML = `
+    <div class="flex items-center justify-center w-6 h-6 shrink-0">⚠️</div>
+    <div class="truncate max-w-md">Autocomplete Error: ${message}</div>
+  `;
+  indicatorShadow.appendChild(chip);
+  document.body.appendChild(indicatorHost);
+
+  requestAnimationFrame(() => {
+    chip.style.opacity = '1';
+  });
+
+  setTimeout(() => {
+    chip.style.opacity = '0';
+    setTimeout(() => indicatorHost.remove(), 300);
+  }, 4000);
 };
 
 // Event Listeners
@@ -160,10 +225,14 @@ document.addEventListener('input', (e) => {
   }
 
   // Explicit Trigger
+  const isAssistantOpen = !!document.getElementById('browser-assist-host');
+  
   if (/[@/]browserassist/i.test(text)) {
-    currentActiveElement = target;
-    mountReactApp();
-  } else {
+    if (!isAssistantOpen) {
+      currentActiveElement = target;
+      mountReactApp();
+    }
+  } else if (!isAssistantOpen) {
     // Inline AutoComplete Trigger
     if (typingTimer) clearTimeout(typingTimer);
     typingTimer = setTimeout(() => {

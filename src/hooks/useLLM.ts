@@ -7,7 +7,7 @@ export const useLLM = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<{progress: number, text: string} | null>(null);
-  const [activeProviderName, setActiveProviderName] = useState<ProviderType>('chrome');
+  const [activeProviderName, setActiveProviderName] = useState<ProviderType>('webllm');
 
   const preloadEngine = useCallback(async (provider: ProviderType) => {
     try {
@@ -16,20 +16,22 @@ export const useLLM = () => {
         await llm.preload((progress, text) => {
           setDownloadProgress({ progress, text });
         });
+        setDownloadProgress(null);
       }
     } catch (e) {
       console.error('Preload failed', e);
+      setDownloadProgress(null);
     }
   }, []);
 
   useEffect(() => {
     // Just grab the current active provider on mount so UI knows what to show
     const getProviderName = async () => {
-      let active: ProviderType = 'chrome';
+      let active: ProviderType = 'webllm';
       if (typeof chrome !== 'undefined' && chrome.storage) {
          const res = await chrome.storage.local.get(['llm_provider']);
-         if (res.llm_provider) {
-           active = res.llm_provider;
+         if (res.llm_provider && res.llm_provider !== 'chrome') {
+           active = res.llm_provider as ProviderType;
          }
       } else {
         active = llmFactory.getActiveProviderType();

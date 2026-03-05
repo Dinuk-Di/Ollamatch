@@ -6,33 +6,45 @@ import { useLLM } from '../hooks/useLLM';
 import { ProviderType } from '../services/llm';
 
 const Popup = () => {
-  const [provider, setProvider] = useState<ProviderType>('chrome');
+  const [provider, setProvider] = useState<ProviderType>('webllm');
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
   const [selectedOllamaModel, setSelectedOllamaModel] = useState<string>('llama3.2:3b');
+  const [ollamaEndpoint, setOllamaEndpoint] = useState<string>('http://localhost:11434');
   const { downloadProgress, preloadEngine } = useLLM();
 
   useEffect(() => {
-    chrome.storage.local.get(['llm_provider', 'ollama_model'], (res) => {
-      if (res.llm_provider) {
+    chrome.storage.local.get(['llm_provider', 'ollama_model', 'ollama_endpoint'], (res) => {
+      if (res.llm_provider && res.llm_provider !== 'chrome') {
         setProvider(res.llm_provider);
+      } else if (res.llm_provider === 'chrome') {
+        setProvider('webllm');
+        chrome.storage.local.set({ llm_provider: 'webllm' });
       }
       if (res.ollama_model) {
         setSelectedOllamaModel(res.ollama_model);
+      }
+      if (res.ollama_endpoint) {
+        setOllamaEndpoint(res.ollama_endpoint);
       }
     });
   }, []);
 
   useEffect(() => {
     if (provider === 'ollama') {
-      fetch('http://localhost:11434/api/tags')
+      fetch(`${ollamaEndpoint.replace(/\/+$/, '')}/api/tags`)
         .then(res => res.json())
         .then(data => {
             const models = data.models?.map((m: any) => m.name) || [];
             setOllamaModels(models);
         })
-        .catch(e => console.error("Failed to fetch ollama models", e));
+        .catch(e => {
+            console.error("Failed to fetch ollama models", e);
+            setOllamaModels([]);
+        });
+    } else if (provider === 'webllm') {
+      preloadEngine('webllm');
     }
-  }, [provider]);
+  }, [provider, ollamaEndpoint]);
 
   const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value as ProviderType;
@@ -72,23 +84,37 @@ const Popup = () => {
           onChange={handleProviderChange}
           className="w-full border rounded-lg p-2 bg-gray-50 outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option value="chrome">Chrome Built-in AI (Gemini Nano) - Fastest</option>
-          <option value="webllm">WebLLM (Phi-3) - Balanced</option>
-          <option value="ollama">Local Ollama (Llama-3) - Powerful</option>
+          <option value="webllm">WebLLM (Phi-3) - Offline In-Browser GPU</option>
+          <option value="ollama">Local Ollama (Llama-3) - Desktop Native Server</option>
         </select>
       </div>
 
       {provider === 'ollama' && (
-        <div className="mb-4">
-          <label className="block text-sm font-semibold mb-1 flex items-center justify-between">
-            <span>Ollama Model</span>
-            <button onClick={() => {
-              fetch('http://localhost:11434/api/tags')
-                .then(res => res.json())
-                .then(data => setOllamaModels(data.models?.map((m: any) => m.name) || []))
-                .catch(() => {});
-            }} className="text-xs text-blue-600 hover:underline">Refresh</button>
-          </label>
+        <>
+          <div className="mb-4">
+            <label className="block text-sm font-semibold mb-1">Ollama Endpoint</label>
+            <input 
+              type="text"
+              value={ollamaEndpoint}
+              onChange={(e) => {
+                const val = e.target.value;
+                setOllamaEndpoint(val);
+                chrome.storage.local.set({ ollama_endpoint: val });
+              }}
+              className="w-full border rounded-lg p-2 bg-gray-50 outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="http://localhost:11434"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-semibold mb-1 flex items-center justify-between">
+              <span>Ollama Model</span>
+              <button onClick={() => {
+                fetch(`${ollamaEndpoint.replace(/\/+$/, '')}/api/tags`)
+                  .then(res => res.json())
+                  .then(data => setOllamaModels(data.models?.map((m: any) => m.name) || []))
+                  .catch(() => setOllamaModels([]));
+              }} className="text-xs text-blue-600 hover:underline">Refresh</button>
+            </label>
           {ollamaModels.length > 0 ? (
             <select 
               value={selectedOllamaModel}
@@ -100,9 +126,10 @@ const Popup = () => {
               ))}
             </select>
           ) : (
-            <div className="text-sm text-red-600 p-2 bg-red-50 rounded border border-red-100">Could not connect to Ollama. Is it running? Make sure to run it with OLLAMA_ORIGINS="*".</div>
+            <div className="text-sm text-red-600 p-2 bg-red-50 rounded border border-red-100">Could not connect to Ollama. Is it running? Make sure to run it with OLLAMA_ORIGINS="*" and your endpoint is correct.</div>
           )}
         </div>
+        </>
       )}
 
       {provider === 'webllm' && downloadProgress && (
@@ -120,15 +147,6 @@ const Popup = () => {
 
       <div className="text-sm bg-blue-50 border border-blue-100 rounded-xl p-3 text-blue-800">
         <h3 className="font-bold mb-1 flex items-center gap-1"><span className="text-base">📌</span> Setup Guide</h3>
-        {provider === 'chrome' && (
-          <ul className="list-disc pl-4 space-y-1 text-xs">
-            <li>Requires Chrome Dev or Chrome Canary.</li>
-            <li>Go to <code className="bg-white px-1 py-0.5 rounded font-mono">chrome://flags</code></li>
-            <li>Enable <b>Prompt API for Gemini Nano</b></li>
-            <li>Set <b>Enables optimization guide on device</b> to <b>Enabled BypassPerfRequirement</b></li>
-            <li>Restart your browser. The browser will secretly download the tiny Gemini Nano model in the background.</li>
-          </ul>
-        )}
         {provider === 'ollama' && (
           <ul className="list-disc pl-4 space-y-1 text-xs">
             <li>Requires <a href="https://ollama.com" target="_blank" className="underline font-bold">Ollama</a> installed locally.</li>

@@ -7,11 +7,24 @@ export class WebLLMProvider implements LLMProvider {
 
   async initEngine(onProgress?: (progress: number, text: string) => void) {
     if (this.engine) return;
-    this.engine = await CreateMLCEngine(this.modelName, {
-      initProgressCallback: (info) => {
-        if (onProgress) onProgress(info.progress, info.text);
+    
+    // Immediately emit an initial state so the UI shows the progress bar right away
+    if (onProgress) {
+      onProgress(0, "Fetching model metadata... please wait.");
+    }
+    
+    try {
+      this.engine = await CreateMLCEngine(this.modelName, {
+        initProgressCallback: (info) => {
+          if (onProgress) onProgress(info.progress, info.text);
+        }
+      });
+    } catch (e: any) {
+      if (onProgress) {
+        onProgress(0, `Error initializing model: ${e.message}`);
       }
-    });
+      throw e;
+    }
   }
 
   async preload(onProgress?: (progress: number, text: string) => void): Promise<void> {

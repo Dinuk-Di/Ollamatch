@@ -108,12 +108,6 @@ export const AssistantApp: React.FC<AssistantAppProps> = ({ onAccept, onCancel }
       <div className="flex-1 overflow-y-auto flex flex-col bg-slate-50/50">
       
         {/* Provider Hints */}
-        {activeProviderName === 'chrome' && !output && !isGenerating && (
-          <div className="px-5 py-3 bg-blue-50/80 border-b border-blue-100/50 text-xs text-blue-700 flex items-start gap-2">
-            <Bot size={14} className="mt-0.5 shrink-0" />
-            <p>Using <b>Chrome Built-in AI</b>. Make sure <i>Prompt API</i> is enabled in <code className="bg-white/50 px-1 rounded">chrome://flags</code> if you see errors.</p>
-          </div>
-        )}
         {activeProviderName === 'ollama' && !output && !isGenerating && (
           <div className="px-5 py-3 bg-orange-50/80 border-b border-orange-100/50 text-xs text-orange-700 flex items-start gap-2">
             <Bot size={14} className="mt-0.5 shrink-0" />
