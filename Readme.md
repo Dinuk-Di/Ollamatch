@@ -1,67 +1,123 @@
-# ⚡ Aegis Core / BrowserAssist
+<div align="center">
+  <img src="src/assets/logo.png" alt="Ollamatch Logo" width="120" />
+  <h1>Ollamatch</h1>
+  <p><strong>AI-powered job matching assistant — right in your browser.</strong></p>
+  <p>
+    <img src="https://img.shields.io/badge/Manifest-v3-blue?style=flat-square" alt="Manifest V3" />
+    <img src="https://img.shields.io/badge/Engine-Ollama-purple?style=flat-square" alt="Ollama" />
+    <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
+  </p>
+</div>
 
-BrowserAssist (Aegis Core) is a powerful, privacy-first AI extension that brings a local Large Language Model (LLM) directly into your browser. Experience near-instant text completion, intelligent drafting, and context-aware suggestions seamlessly integrated into your workflow.
+---
 
-## 🌟 Key Features
+Ollamatch is a Chrome extension that scrapes web pages, extracts text from images via OCR, parses your resume PDF, scores your fit against job descriptions, and generates tailored content — all powered by a **local Ollama LLM** with zero data leaving your machine.
 
-- **Offline, In-Browser AI (WebLLM):** Runs entirely within your browser using WebGPU acceleration for completely offline, private inference via the Phi-3 model.
-- **Local Desktop AI Integration (Ollama):** Connects gracefully to your desktop's Ollama installation to harness powerful local models (e.g. Llama 3, Mistral) without relying on cloud APIs.
-- **Context-Aware Assistance:** Dynamically understands the context of the webpage you are reading, including specialized support for extracting secure email threads from **Gmail**, making it perfect for drafting intelligent email replies.
-- **Inline Ghost Suggestions:** Just start typing. The extension analyzes your context and offers intelligent text completions that you can accept instantly with the `Tab` key.
-- **Dedicated Assistant UI (`/browserassist`):** Need a dedicated writing partner? Type `/browserassist` (or `@browserassist`) anywhere you can type to summon a beautiful, glassmorphic UI overlay. The assistant analyzes your current page's context and any uploaded PDFs to craft highly specific responses.
+## ✨ Features
 
-## 🔒 Security & Privacy First
+| Feature | Description |
+|---------|-------------|
+| 🌐 **Webpage Scraping** | Auto-extracts text from any job posting or web page |
+| 🖼️ **Image OCR** | Select page images and extract text using a vision model (LLaVA) |
+| 📄 **PDF Parsing** | Upload your resume/CV and parse up to 4 pages client-side |
+| 📊 **Match Scoring** | Get an AI-generated suitability score (0–100%) comparing your resume to the JD |
+| ✍️ **Content Generation** | Generate cover letters, emails, or any text using all collected context |
+| 🔒 **Fully Local** | All processing via local Ollama — your data never leaves your machine |
 
-We put your privacy at the forefront:
+## 🧙 How It Works
 
-- **No Cloud Processing:** All data parsing and LLM generation happens strictly on your machine.
-- **Zero CORS Configuration:** Automatically handles restrictive network policies using highly privileged Chrome `declarativeNetRequest` rules. The extension talks to your local Ollama instance seamlessly. No need to mess with terminal commands or `OLLAMA_ORIGINS`.
-- **Anti-XSS Defense:** Engineered with robust string sanitization avoiding outdated `innerHTML` injection to ensure your browser remains secure against DOM-based cross-site scripting attacks.
-- **Private Scraping:** Respects the boundaries of your active tab. Your data never leaves your computer.
+Ollamatch uses a **4-step horizontal wizard**:
 
-## 🚀 Installation & Setup
+1. **Webpage** — Auto-scraped page content, editable
+2. **Images** — Select images on the page to OCR (auto-skips if none found)
+3. **Documents** — Upload a PDF resume; if a JD is detected, get a match score
+4. **Generate** — Write a prompt and generate content using all previous context
 
-### Running from Source (Developer Mode)
+Each step has a **refresh button** 🔄 so you can re-scrape after navigating to a new job.
 
-1. Clone or download this repository.
-2. Install dependencies:
-   ```bash
-   npm install
+## 🚀 Getting Started
+
+### Prerequisites
+
+- [Ollama](https://ollama.com) installed locally
+- A text model pulled (e.g. `ollama pull llama3.2:3b`)
+- A vision model for OCR (e.g. `ollama pull llava:latest`)
+
+### Setup
+
+1. **Start Ollama with CORS enabled:**
+
+   **Windows (PowerShell):**
+   ```powershell
+   $env:OLLAMA_ORIGINS="*"; ollama serve
    ```
-3. Build the extension for production:
+
+   **macOS / Linux:**
    ```bash
+   OLLAMA_ORIGINS="*" ollama serve
+   ```
+
+2. **Install the extension:**
+   ```bash
+   git clone https://github.com/your-username/ollamatch.git
+   cd ollamatch
+   npm install
    npm run build
    ```
-4. Load into Chrome:
-   - Go to `chrome://extensions/`
-   - Enable **Developer mode** in the top right corner.
-   - Click **Load unpacked** and select the `/dist` folder inside this project directory.
 
-### Choosing your AI Engine
+3. **Load in Chrome:**
+   - Navigate to `chrome://extensions`
+   - Enable **Developer mode**
+   - Click **Load unpacked** → select the `dist/` folder
 
-Open the extension popup to select your preferred AI workhorse:
+### Usage
 
-- **WebLLM (Phi-3 - Offline In-Browser GPU):** Best for absolute privacy. The model downloads directly into your browser's VRAM the first time you use it. Subsequent uses are instantaneous and completely offline.
-- **Ollama (Local Desktop App):** Best for performance and using the newest models.
-  1. Download and install [Ollama](https://ollama.com/) for your OS.
-  2. Start the Ollama application. (No special terminal commands are required—just run the app normally).
-  3. Type `/browserassist` in the browser, and the extension will automatically connect to your running Ollama server.
+- **Right-click** on any page → **Open Ollamatch**
+- Or type `@ollamatch` in any text field
+- Or click the extension icon for settings
 
-## 🛠️ Usage
+## ⚙️ Configuration
 
-### 1. The Assistant Overlay
+Click the extension icon to configure:
 
-In any text box (Gmail, Upwork, forums), type:
-`/browserassist`
-This will instantly summon the Aegis Core UI overlay. You can chat with it, ask it to draft responses based on the page's current state, or upload PDF files for it to analyze securely.
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Ollama Endpoint | `http://localhost:11434` | Your Ollama server URL |
+| Model | `llama3.2:3b` | Text generation model |
+| Vision/OCR Model | `llava:latest` | Image text extraction model |
+| Context Window | `4096` | Token limit (increase for longer documents) |
 
-### 2. Inline Autocomplete
+## 🏗️ Tech Stack
 
-Start drafting a sentence and pause for a second. The extension will read your context and generate a helpful "ghost suggestion." If you like it, press **Tab** to accept the suggestion.
+- **React** + **TypeScript** — UI components
+- **Vite** + **CRXJS** — Build tooling for Chrome extensions
+- **Tailwind CSS** — Styling
+- **Ollama** — Local LLM inference
+- **PDF.js** — Client-side PDF parsing
+- **Lucide React** — Icons
+- **Mozilla Readability** — Web page text extraction
 
-## 🏗️ Technical Stack
+## 📁 Project Structure
 
-- **Framework:** React + TypeScript + CRXJS (Vite)
-- **Styling:** Tailwind CSS (with Glassmorphism aesthetic)
-- **AI Libraries:** `@mlc-ai/web-llm` for browser ML inference, Native Fetch for Ollama API.
-- **Context Engines:** Mozilla Readability for web parsing, PDF.js for secure offline document analysis.
+```
+src/
+├── assets/            # Logo and static assets
+├── background/        # Service worker (Ollama proxy, context menu)
+├── components/        # AssistantApp wizard UI
+├── content/           # Content script (injection, triggers)
+├── hooks/             # useLLM React hook
+├── popup/             # Extension popup settings page
+└── services/
+    ├── llm/           # LLM provider abstraction (Ollama)
+    └── pageScraper.ts # Page text & image extraction
+```
+
+## 📄 License
+
+MIT
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ using Ollama + React + TypeScript</sub>
+</div>
