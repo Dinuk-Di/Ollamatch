@@ -5,6 +5,7 @@ on:
     branches: ["main"] # Runs every time you push to the main branch
     paths:
       - 'landing-page/**' # OPTIONAL: Only run the action if files inside the website folder change!
+  workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
