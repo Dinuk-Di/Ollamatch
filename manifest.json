@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Ollamatch",
   "version": "1.0.0",
-  "description": "AI-powered job matching assistant. Scrape pages, OCR images, score your CV against job descriptions, and generate tailored content — all powered by local Ollama.",
+  "description": "AI-powered job matching assistant powered by Ollama",
   "permissions": [
     "activeTab",
     "scripting",
