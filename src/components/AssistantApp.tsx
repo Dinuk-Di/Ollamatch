@@ -457,7 +457,7 @@ SUMMARY: [2-3 sentence analysis of strengths and gaps]`;
           </div>
 
           {/* ════ Step 4: Generate ════ */}
-          <div className="w-full flex-shrink-0 overflow-y-auto p-4 flex flex-col" style={{ minWidth: '100%' }}>
+          <div className="w-full flex-shrink-0 p-4 flex flex-col" style={{ minWidth: '100%', maxHeight: '100%' }}>
             <div className="flex items-center gap-2 mb-3">
               <Wand2 size={14} className="text-violet-400" />
               <span className="text-xs font-bold text-gray-300">Generate with AI</span>
@@ -472,7 +472,7 @@ SUMMARY: [2-3 sentence analysis of strengths and gaps]`;
               {!pageContext && !ocrContext && !pdfContext && <span className="text-[10px] text-gray-600">No context attached</span>}
             </div>
 
-            <div className="relative mb-3">
+            <div className="relative mb-3 flex-shrink-0">
               <textarea
                 autoFocus={currentStep === 3}
                 className="w-full resize-none rounded-xl border border-white/[0.08] p-3 pr-12 outline-none hover:border-violet-500/30 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/10 text-[12px] h-20 bg-white/[0.03] text-gray-200 placeholder-gray-600 transition-all font-[system-ui]"
@@ -491,14 +491,14 @@ SUMMARY: [2-3 sentence analysis of strengths and gaps]`;
             </div>
 
             {error && (
-              <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-[11px] flex items-start gap-2 mb-3">
+              <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-[11px] flex items-start gap-2 mb-3 flex-shrink-0">
                 <span>⚠️</span>
                 <div><b>Error:</b> {error}</div>
               </div>
             )}
 
             {output && (
-              <div ref={outputRef} className="flex-1 max-h-80 overflow-y-auto mb-3">
+              <div ref={outputRef} className="flex-1 min-h-0 overflow-y-auto mb-3">
                 <div className="flex items-center gap-1.5 mb-2">
                   <Bot size={12} className="text-violet-400" />
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Response</span>
@@ -510,7 +510,7 @@ SUMMARY: [2-3 sentence analysis of strengths and gaps]`;
             )}
 
             {output && !isGenerating && (
-              <div className="flex justify-between gap-2 pt-2 border-t border-white/[0.06]">
+              <div className="flex justify-between gap-2 pt-2 border-t border-white/[0.06] flex-shrink-0">
                 <button
                   onClick={() => { navigator.clipboard.writeText(output); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-gray-400 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] rounded-lg transition-all"
