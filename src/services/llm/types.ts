@@ -10,7 +10,7 @@ export interface LLMProvider {
   ): Promise<string>;
   
   /**
-   * Generates a single completion (non-streaming, useful for inline autocomplete)
+   * Generates a single completion (non-streaming)
    */
   generateCompletion(
     prefix: string,

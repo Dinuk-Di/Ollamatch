@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "BrowserAssist",
+  "name": "Ollamatch",
   "version": "1.0.0",
-  "description": "Near-instant text completion and generation AI agent.",
+  "description": "AI-powered job matching assistant. Scrape pages, OCR images, score your CV against job descriptions, and generate tailored content — all powered by local Ollama.",
   "permissions": [
     "activeTab",
     "scripting",
     "storage",
+    "contextMenus",
     "declarativeNetRequest"
   ],
   "host_permissions": [
@@ -40,6 +41,6 @@
   "action": {
     "default_popup": "index.html",
     "default_icon": "src/assets/logo.png",
-    "default_title": "BrowserAssist Options"
+    "default_title": "Ollamatch Settings"
   }
 }

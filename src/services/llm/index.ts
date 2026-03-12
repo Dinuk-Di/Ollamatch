@@ -1,56 +1,38 @@
-import { LLMProvider } from './types';
-import { WebLLMProvider } from './webLLM';
 import { OllamaProvider } from './ollama';
 
-export type ProviderType = 'webllm' | 'ollama';
+export type ProviderType = 'ollama';
+
+export interface LLMProvider {
+  generateCompletion(prompt: string, context?: string, model?: string): Promise<string>;
+}
 
 class LLMFactory {
-  private activeProvider: ProviderType | null = null;
   private instances: Partial<Record<ProviderType, LLMProvider>> = {};
+  private activeProvider: ProviderType | null = null;
 
-  async getProvider(type?: ProviderType): Promise<LLMProvider> {
-    let selected = type;
-    
-    // Attempt to read from storage if not explicitly provided
-    try {
-      if (!selected && typeof chrome !== 'undefined' && chrome.storage && chrome.runtime?.id) {
-        const res = await chrome.storage.local.get(['llm_provider']);
-        if (res.llm_provider && res.llm_provider !== 'chrome') {
-          selected = res.llm_provider as ProviderType;
-        } else {
-          selected = 'webllm';
-          // Set default if it doesn't exist to prevent race conditions
-          chrome.storage.local.set({ llm_provider: 'webllm' });
-        }
-        this.activeProvider = selected;
-      } else if (!selected) {
-        selected = this.activeProvider || 'webllm';
-      }
-    } catch (e: any) {
-      // If the extension context is invalidated (e.g. extension was reloaded), use activeProvider
-      selected = this.activeProvider || 'webllm';
+  async getProvider(): Promise<LLMProvider> {
+    if (!this.activeProvider) {
+      const selected = await new Promise<ProviderType>((resolve) => {
+        chrome.storage.local.get(['llm_provider'], (result) => {
+          let selected = result.llm_provider as ProviderType;
+          if (!selected || selected !== 'ollama') {
+             selected = 'ollama';
+             chrome.storage.local.set({ llm_provider: 'ollama' });
+          }
+          resolve(selected);
+        });
+      });
+      
+      this.activeProvider = selected;
+    }
+
+    const selectedProviderStr = this.activeProvider || 'ollama';
+
+    if (!this.instances[selectedProviderStr]) {
+      this.instances.ollama = new OllamaProvider();
     }
     
-    if (!this.instances[selected!]) {
-      switch (selected) {
-        case 'webllm':
-          this.instances.webllm = new WebLLMProvider();
-          break;
-        case 'ollama':
-          this.instances.ollama = new OllamaProvider();
-          break;
-      }
-    }
-    
-    return this.instances[selected!]!;
-  }
-
-  setProviderType(type: ProviderType) {
-    this.activeProvider = type;
-  }
-  
-  getActiveProviderType(): ProviderType {
-    return this.activeProvider || 'webllm';
+    return this.instances[selectedProviderStr]!;
   }
 }
 

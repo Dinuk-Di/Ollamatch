@@ -4,6 +4,13 @@ export {};
 console.log('BrowserAssist Background Worker Initialized');
 
 chrome.runtime.onInstalled.addListener(() => {
+  // Setup context menu item
+  chrome.contextMenus.create({
+    id: 'open-assistant',
+    title: 'Open Ollamatch',
+    contexts: ['all']
+  });
+
   // Setup Declarative Net Request rules to bypass Ollama's strict CORS checks.
   // This removes the Origin header, so Ollama treats it as a standard local request (like curl).
   chrome.declarativeNetRequest.updateDynamicRules({
@@ -29,6 +36,17 @@ chrome.runtime.onInstalled.addListener(() => {
   }).catch(err => console.error("Failed to setup DNR rules:", err));
 });
 
+// Listener for context menu clicks
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === 'open-assistant' && tab?.id) {
+    chrome.tabs.sendMessage(tab.id, { action: 'toggleAssistant' }, (_response) => {
+      if (chrome.runtime.lastError) {
+        console.error("BrowserAssist: Context Menu Trigger Failed:", chrome.runtime.lastError.message);
+      }
+    });
+  }
+});
+
 const getEndpoint = (base: string) => {
   try {
     const url = new URL(base);
@@ -51,6 +69,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       body: JSON.stringify({
         model: request.model,
         prompt: request.prompt,
+        images: request.images, // Add optional images array for vision models
         stream: false,
         options: {
           num_ctx: request.contextLength || 4096
@@ -78,6 +97,30 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       .catch(error => sendResponse({ error: error.message || String(error) }));
 
     return true; // Indicates asynchronous response
+  }
+
+  if (request.action === 'fetchImageAsBase64') {
+    fetch(request.url)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        let contentType = res.headers.get('content-type') || 'image/jpeg';
+        if (contentType.includes('octet-stream')) contentType = 'image/jpeg';
+        return res.arrayBuffer().then(buffer => ({ buffer, contentType }));
+      })
+      .then(({ buffer, contentType }) => {
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        const chunk = 8192;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+        }
+        sendResponse({ base64: btoa(binary), contentType });
+      })
+      .catch(err => {
+        console.error("Background fetchImageAsBase64 failed:", err);
+        sendResponse({ error: err.message });
+      });
+    return true;
   }
 });
 

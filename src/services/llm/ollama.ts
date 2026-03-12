@@ -14,16 +14,13 @@ export class OllamaProvider implements LLMProvider {
   }
 
   async generateStream(prompt: string, context: string, onChunk: (chunk: string) => void, _onProgress?: (progress: number, text: string) => void): Promise<string> {
-    const combinedPrompt = `System: You are an AI assistant. Do not babble.
-Context:
-${context}
+    const combinedPrompt = `System: You are an AI assistant. Provide well-formatted answers: differentiate paragraphs with line breaks, use bold text for topics and key terms, and add numbered lists when appropriate. Do not babble.
+      Context:
+      ${context}
 
-Task:
-${prompt}
-`;
-
-    // Send a message to the background script to start the stream.
-    // The background script will use a port to send back chunks.
+      Task:
+      ${prompt}
+      `;
     return new Promise(async (resolve, reject) => {
       const { model, endpoint, contextLength } = await this.getModelInfo();
       
@@ -68,25 +65,16 @@ ${prompt}
     });
   }
 
-  async generateCompletion(prefix: string, context: string): Promise<string> {
-    const combinedPrompt = `System: You are an autocomplete engine. Only provide the continuation of the text. Do not repeat the prefix.
-Context:
-${context}
-
-Prefix:
-${prefix}
-`;
-
+  private async _sendCompletionRequest(prompt: string): Promise<string> {
     return new Promise(async (resolve, reject) => {
       try {
-        const { model, endpoint, contextLength } = await this.getModelInfo();
+        const { model, endpoint } = await this.getModelInfo();
         chrome.runtime.sendMessage(
           {
             action: 'generateCompletion',
             model,
             endpoint,
-            contextLength,
-            prompt: combinedPrompt
+            prompt
           },
           (response) => {
             if (chrome.runtime.lastError) {
@@ -110,5 +98,15 @@ ${prefix}
         }
       }
     });
+  }
+
+  async generateCompletion(prompt: string, context: string = ''): Promise<string> {
+    const combinedPrompt = `System: You are a helpful AI assistant. Provide well-formatted answers: differentiate paragraphs with line breaks, use bold text for topics and key terms, and add numbered lists when appropriate. Do not babble.
+${context ? `\nContext:\n${context}` : ''}
+
+User Task:
+${prompt}
+`;
+    return this._sendCompletionRequest(combinedPrompt);
   }
 }
