@@ -29,7 +29,7 @@ export class OllamaProvider implements LLMProvider {
         port = chrome.runtime.connect({ name: 'ollama-stream' });
       } catch (err: any) {
         if (err.message && err.message.includes('Extension context invalidated')) {
-           return reject(new Error('Extension context invalidated. Please refresh the page to use BrowserAssist.'));
+           return reject(new Error('Extension context invalidated. Please refresh the page to use Ollamatch.'));
         }
         return reject(err);
       }
@@ -92,7 +92,7 @@ export class OllamaProvider implements LLMProvider {
         );
       } catch (err: any) {
         if (err.message && err.message.includes('Extension context invalidated')) {
-           reject(new Error('Extension context invalidated. Please refresh the page to use BrowserAssist.'));
+           reject(new Error('Extension context invalidated. Please refresh the page to use Ollamatch.'));
         } else {
            reject(err);
         }

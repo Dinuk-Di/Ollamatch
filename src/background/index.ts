@@ -1,7 +1,7 @@
 export {};
 
 // Background script
-console.log('BrowserAssist Background Worker Initialized');
+console.log('Ollamatch Background Worker Initialized');
 
 chrome.runtime.onInstalled.addListener(() => {
   // Setup context menu item
@@ -41,7 +41,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'open-assistant' && tab?.id) {
     chrome.tabs.sendMessage(tab.id, { action: 'toggleAssistant' }, (_response) => {
       if (chrome.runtime.lastError) {
-        console.error("BrowserAssist: Context Menu Trigger Failed:", chrome.runtime.lastError.message);
+        console.error("Ollamatch: Context Menu Trigger Failed:", chrome.runtime.lastError.message);
       }
     });
   }
