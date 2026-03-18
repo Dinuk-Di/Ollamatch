@@ -4,8 +4,6 @@
   "version": "1.0.0",
   "description": "AI-powered job matching assistant powered by Ollama",
   "permissions": [
-    "activeTab",
-    "scripting",
     "storage",
     "contextMenus",
     "declarativeNetRequest"
